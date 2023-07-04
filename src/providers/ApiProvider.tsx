@@ -22,7 +22,8 @@ export default function APIProvider({ children }: APIProviderProps) {
     if (location.pathname !== "/config" && !APIUrl) {
       navigate("/config");
     }
-  }, [APIUrl, location.pathname, navigate, setSearchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [APIUrl, location.pathname]);
 
   if (location.pathname !== "/config" && !APIUrl) {
     return <LoadingSpinner />;

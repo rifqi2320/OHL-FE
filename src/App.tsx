@@ -1,4 +1,4 @@
-import { Config, Login } from "@/pages";
+import { Barang, Config, Login, Perusahaan } from "@/pages";
 import { Outlet, createBrowserRouter } from "react-router-dom";
 import { DefaultLayout } from "./layouts";
 import { APIProvider } from "./providers";
@@ -27,7 +27,16 @@ const Router = createBrowserRouter([
       {
         path: "/",
         element: <DefaultLayout />,
-        children: [],
+        children: [
+          {
+            path: "/barang",
+            element: <Barang />,
+          },
+          {
+            path: "/perusahaan",
+            element: <Perusahaan />,
+          },
+        ],
       },
       {
         path: "/config",

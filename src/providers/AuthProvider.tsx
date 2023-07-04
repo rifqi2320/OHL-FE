@@ -3,7 +3,7 @@ import { AuthContext } from "@/contexts";
 import { useAPI } from "@/contexts";
 import { User } from "@/types/models";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -22,10 +22,23 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const login = async (username: string, password: string) => {
     const token = await api.login(username, password);
     setToken(token);
-    navigate("/");
+    navigate("/barang");
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setToken(undefined);
+    setUser({
+      username: "",
+    });
+    navigate("/login");
   };
 
   useEffect(() => {
+    if (location.pathname === "/config") {
+      setIsLoading(false);
+      return;
+    }
     // token check
     if (token) {
       localStorage.setItem("token", token);
@@ -37,7 +50,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     if (location.pathname === "/login") {
       // if token exists, redirect to home
       if (token) {
-        navigate("/");
+        navigate("/barang");
+        setIsLoading(false);
         return;
       }
       setIsLoading(false);
@@ -62,7 +76,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
           }
         });
     }
-  }, [token, location.pathname, navigate, api]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, location.pathname]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -74,6 +89,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         user: user,
         token: null,
         login,
+        logout,
       }}
     >
       {children}

@@ -6,6 +6,7 @@ type AuthContext = {
   };
   token: string | null;
   login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
 };
 
 const context = createContext<AuthContext>({
@@ -16,6 +17,7 @@ const context = createContext<AuthContext>({
   login: async () => {
     return undefined;
   },
+  logout: () => {},
 });
 
 export default context;
