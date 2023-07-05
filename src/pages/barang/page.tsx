@@ -18,7 +18,10 @@ import {
 } from "@chakra-ui/react";
 import { EditIcon, DeleteIcon, AddIcon, Search2Icon } from "@chakra-ui/icons";
 import { EntityModal, useWarning } from "@/components";
-import type { BarangWithPerusahaan as Barang, Perusahaan } from "@/types/models";
+import type {
+  BarangWithPerusahaan as Barang,
+  Perusahaan,
+} from "@/types/models";
 import { useEffect, useState } from "react";
 import { useAPI } from "@/contexts";
 import { useSearchParams } from "react-router-dom";
@@ -35,17 +38,31 @@ const BarangPage = () => {
   const searchParams = useDebounce(rawSearchParams, 1000);
   const { api } = useAPI();
 
-  useEffect(() => {
+  const fetch = async () => {
     const query = {
       q: searchParams.get("q") || undefined,
       perusahaan: searchParams.get("perusahaan") || undefined,
     };
-    api.listBarang(query).then((res) => {
-      if (!res.data) {
-        return;
-      }
-      setEntities(res.data);
-    });
+    const res = await api.listBarang(query);
+    if (!res.data) {
+      return;
+    }
+
+    const barangWithPerush = await Promise.all(res.data.map(async (e) => {
+      const perushResp = await api.detailPerusahaan(e.perusahaan_id);
+      const perusahaan = perushResp.data ? perushResp.data : { nama: ""}
+
+      return {
+        ...e,
+        perusahaan,
+      };
+    }))
+
+    setEntities(barangWithPerush);
+  };
+
+  useEffect(() => {
+    fetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -103,7 +120,14 @@ const BarangPage = () => {
           },
         }}
       />
-      <Flex p={8} flexDir={"column"} w="calc(100% - 250px)" maxH="100vh" overflowY="auto" gap={8}>
+      <Flex
+        p={8}
+        flexDir={"column"}
+        w="calc(100% - 250px)"
+        maxH="100vh"
+        overflowY="auto"
+        gap={8}
+      >
         <HStack gap={16}>
           <Heading w="25%">List Barang</Heading>
           <Select
@@ -127,11 +151,20 @@ const BarangPage = () => {
               }}
             />
             <InputRightAddon>
-              <IconButton w="100%" variant="unstyled" aria-label="search" icon={<Search2Icon w="100%" />} />
+              <IconButton
+                w="100%"
+                variant="unstyled"
+                aria-label="search"
+                icon={<Search2Icon w="100%" />}
+              />
             </InputRightAddon>
           </InputGroup>
           <Spacer />
-          <IconButton aria-label="create" icon={<AddIcon />} onClick={openCreateModal} />
+          <IconButton
+            aria-label="create"
+            icon={<AddIcon />}
+            onClick={openCreateModal}
+          />
         </HStack>
         <Table>
           <Thead>
@@ -155,7 +188,11 @@ const BarangPage = () => {
                   <Td>{barang.perusahaan.nama}</Td>
                   <Td>
                     <HStack>
-                      <IconButton aria-label="edit" icon={<EditIcon />} onClick={() => openUpdateModal(i)} />
+                      <IconButton
+                        aria-label="edit"
+                        icon={<EditIcon />}
+                        onClick={() => openUpdateModal(i)}
+                      />
                       <IconButton
                         aria-label="delete"
                         icon={<DeleteIcon />}

@@ -1,4 +1,4 @@
-import { BarangWithPerusahaan, Response } from "@/types/models";
+import { Barang, Response } from "@/types/models";
 import {api} from "."
 
 
@@ -7,7 +7,7 @@ interface listBarangQuery {
     perusahaan?: string;
 }
 
-type ListBarangData = BarangWithPerusahaan[]
+type ListBarangData = Barang[]
 
 const listBarangAPI = async (query: listBarangQuery) => {
     const response = await api.get<Response<ListBarangData>>("/barang", {
