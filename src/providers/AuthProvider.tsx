@@ -2,8 +2,9 @@ import { LoadingSpinner } from "@/components";
 import { AuthContext } from "@/contexts";
 import { useAPI } from "@/contexts";
 import { User } from "@/types/models";
+import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -11,23 +12,24 @@ interface AuthProviderProps {
 
 export default function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [token, setToken] = useState<string>();
   const [user, setUser] = useState<User>({
     username: "",
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const { api } = useAPI();
+  const { api, token, setToken } = useAPI();
 
   const login = async (username: string, password: string) => {
-    const token = await api.login(username, password);
-    setToken(token);
-    navigate("/barang");
+    const res = await api.login(username, password);
+    if (res.data) {
+      setToken(res.data.token);
+      navigate("/barang");
+    }
   };
 
   const logout = () => {
     localStorage.removeItem("token");
-    setToken(undefined);
+    setToken(null);
     setUser({
       username: "",
     });
@@ -43,7 +45,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     if (token) {
       localStorage.setItem("token", token);
     } else {
-      setToken(localStorage.getItem("token") || undefined);
+      setToken(localStorage.getItem("token") || null);
     }
 
     // don't check token on login page
@@ -57,21 +59,25 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
     } else {
       // if token doesn't exist, redirect to login
-      if (!token) {
+      if (!localStorage.getItem("token")) {
         navigate("/login");
         return;
       }
       // send token to backend to get user data
       api
-        .self(token)
-        .then((user: User) => {
+        .self()
+        .then((res) => {
+          if (!res.data) {
+            throw new AxiosError("Unauthorized", "401");
+          }
           // set user data
-          setUser(user);
+          setUser(res.data);
           setIsLoading(false);
         })
         .catch((err) => {
-          if (err.response.status === 401) {
+          if (err.code === "401") {
             localStorage.removeItem("token");
+            setToken(null);
             navigate("/login");
           }
         });

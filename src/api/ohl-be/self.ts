@@ -1,10 +1,11 @@
-import { User } from "@/types/models";
+import { Response, User } from "@/types/models";
+import {api} from ".";
 
-const selfAPI = async (token: string) : Promise<User> => {
-  token
-  return {
-    username: 'admin'
-  }
+type SelfData = User
+
+const selfAPI = async ()  => {
+  const response = await api.get<Response<SelfData>>("/self");
+  return response.data;
 }
 
 export default selfAPI;

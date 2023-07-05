@@ -11,29 +11,53 @@ import {
   HStack,
   useDisclosure,
   Spacer,
+  Input,
+  InputGroup,
+  InputRightAddon,
+  Select,
 } from "@chakra-ui/react";
-import { EditIcon, DeleteIcon, AddIcon } from "@chakra-ui/icons";
+import { EditIcon, DeleteIcon, AddIcon, Search2Icon } from "@chakra-ui/icons";
 import { EntityModal, useWarning } from "@/components";
-import type { Barang } from "@/types/models";
+import type { BarangWithPerusahaan as Barang, Perusahaan } from "@/types/models";
 import { useEffect, useState } from "react";
-
-const dataBarang: Barang[] = [
-  {
-    id: "1",
-    nama: "Barang 1",
-    kode: "BRG1",
-    stok: 10,
-    harga: 10000,
-    perusahaan: "Perusahaan 1",
-  },
-];
+import { useAPI } from "@/contexts";
+import { useSearchParams } from "react-router-dom";
+import { useDebounce } from "usehooks-ts";
 
 const BarangPage = () => {
   const { isOpen, onClose, onOpen } = useDisclosure();
   const [isCreate, setIsCreate] = useState(false);
   const { warning, WarningModal } = useWarning();
-  const [entities, setEntities] = useState<Barang[]>(dataBarang);
+  const [listPerusahaan, setListPerusahaan] = useState<Perusahaan[]>([]);
+  const [entities, setEntities] = useState<Barang[]>([]);
   const [entityIndex, setEntityIndex] = useState(0);
+  const [rawSearchParams, setSearchParams] = useSearchParams({});
+  const searchParams = useDebounce(rawSearchParams, 1000);
+  const { api } = useAPI();
+
+  useEffect(() => {
+    const query = {
+      q: searchParams.get("q") || undefined,
+      perusahaan: searchParams.get("perusahaan") || undefined,
+    };
+    api.listBarang(query).then((res) => {
+      if (!res.data) {
+        return;
+      }
+      setEntities(res.data);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  useEffect(() => {
+    api.listPerusahaan({}).then((res) => {
+      if (!res.data) {
+        return;
+      }
+      setListPerusahaan(res.data);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openCreateModal = () => {
     setIsCreate(true);
@@ -50,15 +74,16 @@ const BarangPage = () => {
     warning({
       title: "Hapus Barang",
       description: "Apakah anda yakin ingin menghapus barang ini?",
-      onConfirm: () => {
-        onClose();
-      }, // TODO: API call
+      onConfirm: async () => {
+        const response = await api.deleteBarang(entities[index].id);
+        if (!response.data) {
+          return;
+        }
+        // refresh page
+        location.reload();
+      },
     });
   };
-
-  useEffect(() => {
-    // TODO: API call
-  }, []);
 
   return (
     <>
@@ -69,10 +94,42 @@ const BarangPage = () => {
         entity={entities[entityIndex] || {}}
         entityType="barang"
         isCreate={isCreate}
+        selectChoices={{
+          perusahaan_id: {
+            ...listPerusahaan.reduce((acc, cur) => {
+              acc[cur.id] = cur.nama;
+              return acc;
+            }, {} as Record<string, string>),
+          },
+        }}
       />
       <Flex p={8} flexDir={"column"} w="calc(100% - 250px)" maxH="100vh" overflowY="auto" gap={8}>
-        <HStack>
-          <Heading>List Barang</Heading>
+        <HStack gap={16}>
+          <Heading w="25%">List Barang</Heading>
+          <Select
+            w="25%"
+            onChange={(e) => {
+              setSearchParams({ perusahaan: e.target.value });
+            }}
+          >
+            <option value="">Semua Perusahaan</option>
+            {listPerusahaan.map((p) => (
+              <option key={p.id} value={p.nama}>
+                {p.nama}
+              </option>
+            ))}
+          </Select>
+          <InputGroup w="50%">
+            <Input
+              placeholder="Search..."
+              onChange={(e) => {
+                setSearchParams({ q: e.target.value });
+              }}
+            />
+            <InputRightAddon>
+              <IconButton w="100%" variant="unstyled" aria-label="search" icon={<Search2Icon w="100%" />} />
+            </InputRightAddon>
+          </InputGroup>
           <Spacer />
           <IconButton aria-label="create" icon={<AddIcon />} onClick={openCreateModal} />
         </HStack>
@@ -83,17 +140,19 @@ const BarangPage = () => {
               <Th>Kode</Th>
               <Th>Stok</Th>
               <Th>Harga</Th>
+              <Th>Perusahaan</Th>
               <Th>Aksi</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {dataBarang.map((barang, i) => {
+            {entities.map((barang, i) => {
               return (
-                <Tr>
+                <Tr key={barang.id}>
                   <Td>{barang.nama}</Td>
                   <Td>{barang.kode}</Td>
                   <Td>{barang.stok}</Td>
                   <Td>{barang.harga}</Td>
+                  <Td>{barang.perusahaan.nama}</Td>
                   <Td>
                     <HStack>
                       <IconButton aria-label="edit" icon={<EditIcon />} onClick={() => openUpdateModal(i)} />

@@ -1,6 +1,8 @@
 import { useAPI } from "@/contexts";
+import { Barang, Perusahaan } from "@/types/models";
 import {
   Button,
+  Container,
   Input,
   Modal,
   ModalBody,
@@ -8,27 +10,48 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Select,
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
 interface EntityModalProps {
   isOpen: boolean;
-  entity: Record<string, string | number>;
+  entity: Record<string, string | number | Record<string, string>>;
   entityType: "barang" | "perusahaan";
   isCreate: boolean;
   onClose: () => void;
+  selectChoices?: Record<string, Record<string, string>>;
 }
 
-const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose }: EntityModalProps) => {
-  // const { api } = useAPI();
-  const [editableEntity, setEditableEntity] = useState<Record<string, string | number>>(entity || {});
+const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoices }: EntityModalProps) => {
+  const { api } = useAPI();
+  const [editableEntity, setEditableEntity] = useState<Record<string, string | number | Record<string, string>>>(
+    entity || {}
+  );
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    console.log(editableEntity);
     if (entityType === "barang") {
-      console.log(entity);
+      if (isCreate) {
+        const res = await api.createBarang(editableEntity as Barang);
+        if (!res.data) return;
+        location.reload();
+      } else {
+        const res = await api.updateBarang(editableEntity as Barang);
+        if (!res.data) return;
+        location.reload();
+      }
     } else {
-      console.log(entity);
+      if (isCreate) {
+        const res = await api.createPerusahaan(editableEntity as Perusahaan);
+        if (!res.data) return;
+        location.reload();
+      } else {
+        const res = await api.updatePerusahaan(editableEntity as Perusahaan);
+        if (!res.data) return;
+        location.reload();
+      }
     }
     onClose();
   };
@@ -37,10 +60,26 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose }: EntityMo
     if (isCreate) {
       // copy keys into new object
       const newEntity: Record<string, string | number> = {};
-      Object.keys(entity).forEach((key) => {
-        if (key.includes("id")) return;
-        newEntity[key] = "";
-      });
+      if (Object.keys(entity).length > 0) {
+        Object.keys(entity).forEach((key) => {
+          if (entity[key] instanceof Object) return;
+          if (key.includes("id")) return;
+          newEntity[key] = "";
+        });
+      } else {
+        if (entityType === "barang") {
+          newEntity["nama"] = "";
+          newEntity["kode"] = "";
+          newEntity["stok"] = 0;
+          newEntity["harga"] = 0;
+          newEntity["perusahaan_id"] = selectChoices?.perusahaan_id ? Object.keys(selectChoices?.perusahaan_id)[0] : "";
+        } else {
+          newEntity["nama"] = "";
+          newEntity["kode"] = "";
+          newEntity["no_telp"] = "";
+          newEntity["alamat"] = "";
+        }
+      }
       setEditableEntity(newEntity);
     } else {
       setEditableEntity(entity);
@@ -55,15 +94,39 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose }: EntityMo
         <ModalHeader>{`Edit ${entityType}`}</ModalHeader>
         <ModalBody>
           {Object.entries(editableEntity).map(([key, value]) => {
+            if (value instanceof Object) return;
+            if (Object.keys(selectChoices || {}).includes(key)) {
+              return (
+                <Container key={key}>
+                  <Text mt={2}>{key.charAt(0).toUpperCase() + key.split("_")[0].slice(1)}</Text>
+                  <Select
+                    value={editableEntity[key] as string}
+                    onChange={(e) => {
+                      setEditableEntity({ ...editableEntity, [key]: e.target.value });
+                    }}
+                  >
+                    {Object.entries(selectChoices?.[key] || {}).map(([id, name]) => {
+                      console.log({ id, name });
+                      return (
+                        <option key={id} value={id}>
+                          {name}
+                        </option>
+                      );
+                    })}
+                  </Select>
+                </Container>
+              );
+            }
             if (key.includes("id")) return;
             return (
-              <>
+              <Container key={key}>
                 <Text mt={2}>{key.charAt(0).toUpperCase() + key.slice(1)}</Text>
                 <Input
                   value={value}
+                  type={typeof value === "number" ? "number" : "text"}
                   onChange={(e) => setEditableEntity({ ...editableEntity, [key]: e.target.value })}
                 />
-              </>
+              </Container>
             );
           })}
         </ModalBody>

@@ -11,11 +11,17 @@ import {
   HStack,
   useDisclosure,
   Spacer,
+  InputGroup,
+  Input,
+  InputRightAddon,
 } from "@chakra-ui/react";
-import { EditIcon, DeleteIcon, AddIcon } from "@chakra-ui/icons";
+import { EditIcon, DeleteIcon, AddIcon, Search2Icon } from "@chakra-ui/icons";
 import { EntityModal, useWarning } from "@/components";
 import type { Perusahaan } from "@/types/models";
 import { useEffect, useState } from "react";
+import { useAPI } from "@/contexts";
+import { useDebounce } from "usehooks-ts";
+import { useSearchParams } from "react-router-dom";
 
 const dataPerusahaan: Perusahaan[] = [
   {
@@ -33,6 +39,22 @@ const PerusahaanPage = () => {
   const { warning, WarningModal } = useWarning();
   const [entities, setEntities] = useState<Perusahaan[]>(dataPerusahaan);
   const [entityIndex, setEntityIndex] = useState(0);
+  const { api } = useAPI();
+  const [rawSearchParams, setSearchParams] = useSearchParams();
+  const searchParams = useDebounce(rawSearchParams, 1000);
+
+  useEffect(() => {
+    const query = {
+      q: searchParams.get("q") || undefined,
+    };
+    api.listPerusahaan(query).then((res) => {
+      if (!res.data) {
+        return;
+      }
+      setEntities(res.data);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const openCreateModal = () => {
     setIsCreate(true);
@@ -49,9 +71,13 @@ const PerusahaanPage = () => {
     warning({
       title: "Hapus Barang",
       description: "Apakah anda yakin ingin menghapus perusahaan ini?",
-      onConfirm: () => {
-        onClose();
-      }, // TODO: API call
+      onConfirm: async () => {
+        const response = await api.deletePerusahaan(entities[index].id);
+        if (!response.data) {
+          return;
+        }
+        location.reload();
+      },
     });
   };
 
@@ -70,9 +96,20 @@ const PerusahaanPage = () => {
         isCreate={isCreate}
       />
       <Flex p={8} flexDir={"column"} w="calc(100% - 250px)" maxH="100vh" overflowY="auto" gap={8}>
-        <HStack>
-          <Heading>List Perusahaan</Heading>
+        <HStack gap={16}>
+          <Heading w="25%">List Perusahaan</Heading>
           <Spacer />
+          <InputGroup w="75%">
+            <Input
+              placeholder="Search..."
+              onChange={(e) => {
+                setSearchParams({ q: e.target.value });
+              }}
+            />
+            <InputRightAddon>
+              <IconButton w="100%" variant="unstyled" aria-label="search" icon={<Search2Icon w="100%" />} />
+            </InputRightAddon>
+          </InputGroup>
           <IconButton aria-label="create" icon={<AddIcon />} onClick={openCreateModal} />
         </HStack>
         <Table>
@@ -86,9 +123,9 @@ const PerusahaanPage = () => {
             </Tr>
           </Thead>
           <Tbody>
-            {dataPerusahaan.map((perusahaan, i) => {
+            {entities.map((perusahaan, i) => {
               return (
-                <Tr>
+                <Tr key={perusahaan.id}>
                   <Td>{perusahaan.nama}</Td>
                   <Td>{perusahaan.kode}</Td>
                   <Td>{perusahaan.no_telp}</Td>

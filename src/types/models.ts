@@ -8,7 +8,13 @@ export type Barang = {
   kode: string;
   harga: number;
   stok: number;
-  perusahaan: string;
+  perusahaan_id: string;
+}
+
+export type BarangWithPerusahaan = Barang & {
+  perusahaan: {
+    nama: string;
+  }
 }
 
 export type Perusahaan = {
@@ -17,4 +23,10 @@ export type Perusahaan = {
   kode: string;
   alamat: string;
   no_telp: string;
+}
+
+export type Response<T> = {
+  status: "success" | "error";
+  message: string;
+  data: T | null;
 }
