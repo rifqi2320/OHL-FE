@@ -13,7 +13,7 @@ export default function APIProvider({ children }: APIProviderProps) {
   const navigate = useNavigate();
   const [APIUrl, setURL] = useState<string | null>(null);
   if (APIUrl) {
-    OHLBEAxios.defaults.baseURL = "http://" + APIUrl;
+    OHLBEAxios.defaults.baseURL = APIUrl;
   }
 
   const setToken = (token: string | null) => {
