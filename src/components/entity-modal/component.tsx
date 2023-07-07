@@ -104,11 +104,12 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
                 <Text mt={2}>{key.charAt(0).toUpperCase() + key.slice(1)}</Text>
                 <Input
                   value={value}
+                  required
                   type={typeof value === "number" ? "number" : "text"}
                   onChange={(e) => {
                     setEditableEntity({
                       ...editableEntity,
-                      [key]: value === "number" ? +e.target.value : e.target.value,
+                      [key]: typeof value === "number" ? e.target.valueAsNumber ?? 0 : e.target.value,
                     });
                   }}
                 />
