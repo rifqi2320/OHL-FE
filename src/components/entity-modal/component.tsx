@@ -31,7 +31,6 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
   );
 
   const handleSave = async () => {
-    console.log(editableEntity);
     if (entityType === "barang") {
       if (isCreate) {
         const res = await api.createBarang(editableEntity as Barang);
@@ -64,7 +63,7 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
         Object.keys(entity).forEach((key) => {
           if (entity[key] instanceof Object) return;
           if (key.includes("id")) return;
-          newEntity[key] = "";
+          newEntity[key] = typeof entity[key] === "string" ? "" : 0;
           if (entityType === "barang" && selectChoices?.perusahaan_id)
             newEntity["perusahaan_id"] = Object.keys(selectChoices.perusahaan_id)[0];
         });
@@ -84,7 +83,6 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
           newEntity["alamat"] = "";
         }
       }
-      console.log({ entity, newEntity, selectChoices });
       setEditableEntity(newEntity);
     } else {
       setEditableEntity(entity);
@@ -107,7 +105,12 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
                 <Input
                   value={value}
                   type={typeof value === "number" ? "number" : "text"}
-                  onChange={(e) => setEditableEntity({ ...editableEntity, [key]: e.target.value })}
+                  onChange={(e) => {
+                    setEditableEntity({
+                      ...editableEntity,
+                      [key]: value === "number" ? +e.target.value : e.target.value,
+                    });
+                  }}
                 />
               </Container>
             );
