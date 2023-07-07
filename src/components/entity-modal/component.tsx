@@ -65,6 +65,8 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
           if (entity[key] instanceof Object) return;
           if (key.includes("id")) return;
           newEntity[key] = "";
+          if (entityType === "barang" && selectChoices?.perusahaan_id)
+            newEntity["perusahaan_id"] = Object.keys(selectChoices.perusahaan_id)[0];
         });
       } else {
         if (entityType === "barang") {
@@ -72,7 +74,9 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
           newEntity["kode"] = "";
           newEntity["stok"] = 0;
           newEntity["harga"] = 0;
-          newEntity["perusahaan_id"] = selectChoices?.perusahaan_id ? Object.keys(selectChoices?.perusahaan_id)[0] : "";
+          newEntity["perusahaan_id"] = selectChoices?.perusahaan_id
+            ? Object.values(selectChoices?.perusahaan_id)[0]
+            : "";
         } else {
           newEntity["nama"] = "";
           newEntity["kode"] = "";
@@ -80,6 +84,7 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
           newEntity["alamat"] = "";
         }
       }
+      console.log({ entity, newEntity, selectChoices });
       setEditableEntity(newEntity);
     } else {
       setEditableEntity(entity);
@@ -91,32 +96,10 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>{`Edit ${entityType}`}</ModalHeader>
+        <ModalHeader>{`${isCreate ? "Create" : "Edit"} ${entityType}`}</ModalHeader>
         <ModalBody>
           {Object.entries(editableEntity).map(([key, value]) => {
             if (value instanceof Object) return;
-            if (Object.keys(selectChoices || {}).includes(key)) {
-              return (
-                <Container key={key}>
-                  <Text mt={2}>{key.charAt(0).toUpperCase() + key.split("_")[0].slice(1)}</Text>
-                  <Select
-                    value={editableEntity[key] as string}
-                    onChange={(e) => {
-                      setEditableEntity({ ...editableEntity, [key]: e.target.value });
-                    }}
-                  >
-                    {Object.entries(selectChoices?.[key] || {}).map(([id, name]) => {
-                      console.log({ id, name });
-                      return (
-                        <option key={id} value={id}>
-                          {name}
-                        </option>
-                      );
-                    })}
-                  </Select>
-                </Container>
-              );
-            }
             if (key.includes("id")) return;
             return (
               <Container key={key}>
@@ -128,6 +111,29 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
                 />
               </Container>
             );
+          })}
+          {Object.entries(editableEntity).map(([key, _]) => {
+            if (Object.keys(selectChoices || {}).includes(key)) {
+              return (
+                <Container key={key}>
+                  <Text mt={2}>{key.charAt(0).toUpperCase() + key.split("_")[0].slice(1)}</Text>
+                  <Select
+                    value={editableEntity[key] as string}
+                    onChange={(e) => {
+                      setEditableEntity({ ...editableEntity, [key]: e.target.value });
+                    }}
+                  >
+                    {Object.entries(selectChoices?.[key] || {}).map(([id, name]) => {
+                      return (
+                        <option key={id} value={id}>
+                          {name}
+                        </option>
+                      );
+                    })}
+                  </Select>
+                </Container>
+              );
+            } else return;
           })}
         </ModalBody>
         <ModalFooter>

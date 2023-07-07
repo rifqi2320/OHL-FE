@@ -27,7 +27,7 @@ export default function APIProvider({ children }: APIProviderProps) {
   const setAPIUrl = (url: string) => {
     setURL(url);
     localStorage.setItem("api", url);
-    OHLBEAxios.defaults.baseURL = "http://" + url;
+    OHLBEAxios.defaults.baseURL = url;
   };
 
   useEffect(() => {
