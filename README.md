@@ -27,3 +27,6 @@ Sebuah frontend untuk seleksi Lab Programming 2023
 
 ## Notes
 - Please ask the assistant if you have any questions about the app
+
+## Fixes
+- Fix number input submitted as string (13521101 - Arsa)
