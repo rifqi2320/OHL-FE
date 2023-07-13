@@ -138,7 +138,7 @@ const BarangPage = () => {
           >
             <option value="">Semua Perusahaan</option>
             {listPerusahaan.map((p) => (
-              <option key={p.id} value={p.nama}>
+              <option key={p.id} value={p.id}>
                 {p.nama}
               </option>
             ))}
