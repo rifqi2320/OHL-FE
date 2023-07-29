@@ -74,7 +74,7 @@ const EntityModal = ({ isOpen, entity, entityType, isCreate, onClose, selectChoi
           newEntity["stok"] = 0;
           newEntity["harga"] = 0;
           newEntity["perusahaan_id"] = selectChoices?.perusahaan_id
-            ? Object.values(selectChoices?.perusahaan_id)[0]
+            ? Object.keys(selectChoices?.perusahaan_id)[0]
             : "";
         } else {
           newEntity["nama"] = "";
