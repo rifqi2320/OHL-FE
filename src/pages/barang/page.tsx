@@ -48,15 +48,17 @@ const BarangPage = () => {
       return;
     }
 
-    const barangWithPerush = await Promise.all(res.data.map(async (e) => {
-      const perushResp = await api.detailPerusahaan(e.perusahaan_id);
-      const perusahaan = perushResp.data ? perushResp.data : { nama: ""}
+    const barangWithPerush = await Promise.all(
+      res.data.map(async (e) => {
+        const perushResp = await api.detailPerusahaan(e.perusahaan_id);
+        const perusahaan = perushResp.data ? perushResp.data : { nama: "" };
 
-      return {
-        ...e,
-        perusahaan,
-      };
-    }))
+        return {
+          ...e,
+          perusahaan,
+        };
+      })
+    );
 
     setEntities(barangWithPerush);
   };
@@ -133,7 +135,10 @@ const BarangPage = () => {
           <Select
             w="25%"
             onChange={(e) => {
-              setSearchParams({ perusahaan: e.target.value });
+              setSearchParams((searchParams) => {
+                searchParams.set("perusahaan", e.target.value);
+                return searchParams;
+              });
             }}
           >
             <option value="">Semua Perusahaan</option>
@@ -147,7 +152,10 @@ const BarangPage = () => {
             <Input
               placeholder="Search..."
               onChange={(e) => {
-                setSearchParams({ q: e.target.value });
+                setSearchParams((searchParams) => {
+                  searchParams.set("q", e.target.value);
+                  return searchParams;
+                });
               }}
             />
             <InputRightAddon>
